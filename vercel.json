@@ -1,6 +1,13 @@
+// vercel.json - VERSI FIX
 {
   "version": 2,
+  "functions": {
+    "api/videos.js": {
+      "maxDuration": 10
+    }
+  },
   "routes": [
+    { "src": "/api/videos", "dest": "/api/videos.js" },
     { "src": "/api/(.*)", "dest": "/api/$1" },
     { "src": "/(.*)", "dest": "/$1" }
   ]
