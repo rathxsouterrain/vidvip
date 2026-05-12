@@ -1,4 +1,3 @@
-<!-- admin.html - Panel Admin -->
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -19,7 +18,6 @@
             min-height: 100vh;
         }
 
-        /* Login Screen */
         .login-screen {
             position: fixed;
             top: 0;
@@ -115,7 +113,6 @@
             opacity: 1;
         }
 
-        /* Main Admin Content */
         .admin-content {
             display: none;
             max-width: 800px;
@@ -127,7 +124,6 @@
             display: block;
         }
 
-        /* Header */
         .admin-header {
             display: flex;
             justify-content: space-between;
@@ -162,7 +158,6 @@
             border-color: #fff;
         }
 
-        /* Form Section */
         .form-section {
             margin-bottom: 50px;
         }
@@ -231,7 +226,12 @@
             transform: scale(0.98);
         }
 
-        /* Video List */
+        .submit-btn:disabled {
+            background: #333;
+            color: #666;
+            cursor: not-allowed;
+        }
+
         .list-section {
             border-top: 1px solid #222;
             padding-top: 40px;
@@ -265,10 +265,10 @@
         }
 
         .video-thumb {
-            width: 50px;
-            height: 75px;
+            width: 60px;
+            height: 34px;
             object-fit: cover;
-            border-radius: 2px;
+            border-radius: 3px;
             border: 1px solid #333;
         }
 
@@ -305,7 +305,6 @@
             letter-spacing: 1px;
         }
 
-        /* Success Message */
         .success-msg {
             position: fixed;
             top: 30px;
@@ -326,7 +325,26 @@
             transform: translateX(0);
         }
 
-        /* Responsive */
+        .error-msg {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            background: #ff4444;
+            color: #fff;
+            padding: 15px 25px;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            transform: translateX(150%);
+            transition: transform 0.4s ease;
+            z-index: 500;
+            border-radius: 2px;
+        }
+
+        .error-msg.show {
+            transform: translateX(0);
+        }
+
         @media (max-width: 768px) {
             .admin-content {
                 padding: 20px;
@@ -349,14 +367,13 @@
             }
             
             .video-thumb {
-                width: 40px;
-                height: 60px;
+                width: 50px;
+                height: 28px;
             }
         }
     </style>
 </head>
 <body>
-    <!-- Login Screen -->
     <div class="login-screen" id="loginScreen">
         <div class="login-box">
             <div class="login-logo">VIDVIP <span>ADMIN</span></div>
@@ -366,7 +383,6 @@
         </div>
     </div>
 
-    <!-- Admin Content -->
     <div class="admin-content" id="adminContent">
         <div class="admin-header">
             <h1 class="admin-title">Panel Administrasi</h1>
@@ -391,7 +407,7 @@
                     <input type="url" class="form-input" id="videoJumpshare" placeholder="https://jumpshare.com/v/XXXXXXX" required>
                 </div>
                 
-                <button type="submit" class="submit-btn">Upload & Simpan</button>
+                <button type="submit" class="submit-btn" id="submitBtn">Upload & Simpan</button>
             </form>
         </div>
 
@@ -401,7 +417,7 @@
                 <table class="video-list" id="videoTable">
                     <thead>
                         <tr>
-                            <th style="width: 70px;">Poster</th>
+                            <th style="width: 80px;">Poster</th>
                             <th>Judul</th>
                             <th style="width: 100px;">Aksi</th>
                         </tr>
@@ -415,10 +431,14 @@
         </div>
     </div>
 
-    <!-- Success Notification -->
     <div class="success-msg" id="successMsg">Video berhasil disimpan!</div>
+    <div class="error-msg" id="errorMsg">Terjadi kesalahan!</div>
 
     <script>
+        const API_URL = window.location.hostname === 'localhost' 
+            ? 'http://localhost:3000/api/videos.js' 
+            : '/api/videos.js';
+            
         const CORRECT_PASSWORD = 'ulin123';
         const loginScreen = document.getElementById('loginScreen');
         const adminContent = document.getElementById('adminContent');
@@ -431,13 +451,13 @@
         const emptyList = document.getElementById('emptyList');
         const videoTable = document.getElementById('videoTable');
         const successMsg = document.getElementById('successMsg');
+        const errorMsg = document.getElementById('errorMsg');
+        const submitBtn = document.getElementById('submitBtn');
 
-        // Check if already logged in
         if (sessionStorage.getItem('vidvip_admin') === 'logged_in') {
             showAdmin();
         }
 
-        // Login handler
         function handleLogin() {
             const password = passwordInput.value.trim();
             
@@ -458,14 +478,12 @@
             if (e.key === 'Enter') handleLogin();
         });
 
-        // Show admin panel
         function showAdmin() {
             loginScreen.classList.add('hidden');
             adminContent.classList.add('active');
             loadVideoList();
         }
 
-        // Logout
         logoutBtn.addEventListener('click', () => {
             sessionStorage.removeItem('vidvip_admin');
             loginScreen.classList.remove('hidden');
@@ -473,82 +491,106 @@
             passwordInput.value = '';
         });
 
-        // Upload form handler
-        uploadForm.addEventListener('submit', (e) => {
+        uploadForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
             const title = document.getElementById('videoTitle').value.trim();
             const poster = document.getElementById('videoPoster').value.trim();
             let jumpshare = document.getElementById('videoJumpshare').value.trim();
             
-            // Auto-convert Jumpshare link to embed format if needed
             if (jumpshare.includes('jumpshare.com/v/')) {
                 jumpshare = jumpshare.replace('/v/', '/embed/');
             }
             
-            const videos = JSON.parse(localStorage.getItem('vidvip_videos') || '[]');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Menyimpan...';
             
-            videos.push({
-                title: title,
-                poster: poster,
-                jumpshare: jumpshare,
-                uploadedAt: new Date().toISOString()
-            });
-            
-            localStorage.setItem('vidvip_videos', JSON.stringify(videos));
-            
-            // Reset form
-            uploadForm.reset();
-            
-            // Show success message
-            showSuccess('Video berhasil disimpan!');
-            
-            // Refresh list
-            loadVideoList();
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, poster, jumpshare })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    uploadForm.reset();
+                    showSuccess('Video berhasil disimpan!');
+                    loadVideoList();
+                } else {
+                    showError(result.error || 'Gagal menyimpan video');
+                }
+            } catch (err) {
+                showError('Gagal terhubung ke server');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Upload & Simpan';
+            }
         });
 
-        // Load video list
-        function loadVideoList() {
-            const videos = JSON.parse(localStorage.getItem('vidvip_videos') || '[]');
-            
-            if (videos.length === 0) {
-                videoTable.style.display = 'none';
-                emptyList.style.display = 'block';
-                return;
+        async function loadVideoList() {
+            try {
+                const response = await fetch(API_URL);
+                const result = await response.json();
+                
+                if (!result.success) {
+                    throw new Error('Gagal memuat data');
+                }
+
+                const videos = result.data;
+                
+                if (videos.length === 0) {
+                    videoTable.style.display = 'none';
+                    emptyList.style.display = 'block';
+                    return;
+                }
+                
+                videoTable.style.display = 'table';
+                emptyList.style.display = 'none';
+                videoTableBody.innerHTML = '';
+                
+                videos.forEach((video, index) => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>
+                            <img src="${video.poster}" class="video-thumb" alt="" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2260%22 height=%2234%22%3E%3Crect width=%22100%25%22 height=%22100%25%22 fill=%22%23111%22/%3E%3C/svg%3E'">
+                        </td>
+                        <td class="video-title-cell" title="${video.title}">${video.title}</td>
+                        <td>
+                            <button class="delete-btn" onclick="deleteVideo(${index})">Hapus</button>
+                        </td>
+                    `;
+                    videoTableBody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Error:', error);
             }
-            
-            videoTable.style.display = 'table';
-            emptyList.style.display = 'none';
-            videoTableBody.innerHTML = '';
-            
-            videos.forEach((video, index) => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>
-                        <img src="${video.poster}" class="video-thumb" alt="" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2250%22 height=%2275%22%3E%3Crect width=%22100%25%22 height=%22100%25%22 fill=%22%23111%22/%3E%3C/svg%3E'">
-                    </td>
-                    <td class="video-title-cell" title="${video.title}">${video.title}</td>
-                    <td>
-                        <button class="delete-btn" onclick="deleteVideo(${index})">Hapus</button>
-                    </td>
-                `;
-                videoTableBody.appendChild(row);
-            });
         }
 
-        // Delete video
-        window.deleteVideo = function(index) {
+        window.deleteVideo = async function(index) {
             if (!confirm('Yakin ingin menghapus video ini?')) return;
             
-            const videos = JSON.parse(localStorage.getItem('vidvip_videos') || '[]');
-            videos.splice(index, 1);
-            localStorage.setItem('vidvip_videos', JSON.stringify(videos));
-            
-            showSuccess('Video berhasil dihapus!');
-            loadVideoList();
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ index })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showSuccess('Video berhasil dihapus!');
+                    loadVideoList();
+                } else {
+                    showError(result.error || 'Gagal menghapus video');
+                }
+            } catch (err) {
+                showError('Gagal terhubung ke server');
+            }
         };
 
-        // Show success notification
         function showSuccess(message) {
             successMsg.textContent = message;
             successMsg.classList.add('show');
@@ -557,7 +599,14 @@
             }, 3000);
         }
 
-        // Initial load if already logged in
+        function showError(message) {
+            errorMsg.textContent = message;
+            errorMsg.classList.add('show');
+            setTimeout(() => {
+                errorMsg.classList.remove('show');
+            }, 3000);
+        }
+
         if (sessionStorage.getItem('vidvip_admin') === 'logged_in') {
             loadVideoList();
         }
