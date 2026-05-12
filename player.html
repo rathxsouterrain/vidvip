@@ -1,0 +1,432 @@
+<!-- player.html - Halaman Pemutar Video -->
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VIDVIP - Player</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #000000;
+            color: #ffffff;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        header {
+            padding: 20px 40px;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            background: #000;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: 900;
+            letter-spacing: 4px;
+            color: #fff;
+            text-decoration: none;
+        }
+
+        .logo span {
+            color: #fff;
+            border: 2px solid #fff;
+            padding: 2px 8px;
+            margin-left: 4px;
+            font-size: 14px;
+            vertical-align: middle;
+            font-weight: 700;
+        }
+
+        .back-link {
+            color: #888;
+            text-decoration: none;
+            font-size: 13px;
+            letter-spacing: 1px;
+            transition: color 0.3s;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .back-link:hover {
+            color: #fff;
+        }
+
+        /* Main Content */
+        main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 30px 40px;
+        }
+
+        /* Video Title */
+        .video-title {
+            font-size: 22px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            line-height: 1.3;
+            padding-right: 20px;
+        }
+
+        /* Player Container */
+        .player-container {
+            position: relative;
+            width: 100%;
+            background: #111;
+            border-radius: 4px;
+            overflow: hidden;
+            border: 1px solid #222;
+        }
+
+        .player-wrapper {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+            background: #000;
+        }
+
+        .player-wrapper iframe,
+        .player-wrapper .click-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        /* Click Overlay for Pop-under */
+        .click-overlay {
+            background: transparent;
+            cursor: pointer;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.5s;
+        }
+
+        .click-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .play-button {
+            width: 80px;
+            height: 80px;
+            background: rgba(255,255,255,0.15);
+            border: 3px solid rgba(255,255,255,0.8);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            backdrop-filter: blur(4px);
+        }
+
+        .play-button:hover {
+            background: rgba(255,255,255,0.25);
+            transform: scale(1.1);
+        }
+
+        .play-button::after {
+            content: '';
+            width: 0;
+            height: 0;
+            border-left: 28px solid #fff;
+            border-top: 16px solid transparent;
+            border-bottom: 16px solid transparent;
+            margin-left: 6px;
+        }
+
+        .overlay-text {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 12px;
+            color: rgba(255,255,255,0.6);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        /* Related Videos Section */
+        .related-section {
+            margin-top: 50px;
+            padding-top: 30px;
+            border-top: 1px solid #222;
+        }
+
+        .section-title {
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            color: #888;
+            margin-bottom: 25px;
+            font-weight: 500;
+        }
+
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 20px;
+        }
+
+        .video-card {
+            cursor: pointer;
+            transition: transform 0.3s ease, opacity 0.3s;
+            text-decoration: none;
+            color: #fff;
+            display: block;
+        }
+
+        .video-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .video-card:hover .poster-wrapper::after {
+            opacity: 1;
+        }
+
+        .poster-wrapper {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 2/3;
+            background: #111;
+            border-radius: 4px;
+            overflow: hidden;
+            border: 1px solid #222;
+        }
+
+        .poster-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .poster-wrapper::after {
+            content: '▶';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 32px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            color: #fff;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+        }
+
+        .video-card-title {
+            margin-top: 10px;
+            font-size: 13px;
+            font-weight: 500;
+            line-height: 1.4;
+            color: #ccc;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .video-card:hover .video-card-title {
+            color: #fff;
+        }
+
+        /* Not Found State */
+        .not-found {
+            text-align: center;
+            padding: 100px 20px;
+        }
+
+        .not-found h2 {
+            font-size: 18px;
+            color: #888;
+            margin-bottom: 20px;
+            font-weight: 400;
+        }
+
+        .not-found a {
+            color: #fff;
+            text-decoration: underline;
+            font-size: 14px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            header {
+                padding: 15px 20px;
+            }
+            
+            main {
+                padding: 20px;
+            }
+            
+            .video-title {
+                font-size: 18px;
+            }
+            
+            .video-grid {
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+                gap: 15px;
+            }
+            
+            .play-button {
+                width: 60px;
+                height: 60px;
+            }
+            
+            .play-button::after {
+                border-left-width: 20px;
+                border-top-width: 12px;
+                border-bottom-width: 12px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .video-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="index.html" class="logo">VIDVIP <span>VIP</span></a>
+        <a href="index.html" class="back-link">← Kembali</a>
+    </header>
+
+    <main id="mainContent">
+        <div id="videoPlayerSection">
+            <h1 class="video-title" id="videoTitle">Loading...</h1>
+            
+            <div class="player-container">
+                <div class="player-wrapper" id="playerWrapper">
+                    <iframe id="videoFrame" allowfullscreen></iframe>
+                    <div class="click-overlay" id="clickOverlay">
+                        <div class="play-button"></div>
+                        <div class="overlay-text">Klik untuk Memutar</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="related-section">
+            <h3 class="section-title">Video Lainnya</h3>
+            <div class="video-grid" id="relatedGrid"></div>
+        </div>
+    </main>
+
+    <div class="not-found" id="notFound" style="display: none;">
+        <h2>Video tidak ditemukan</h2>
+        <a href="index.html">Kembali ke Beranda</a>
+    </div>
+
+    <script>
+        // Get video ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const videoId = parseInt(urlParams.get('id'));
+
+        // Load videos
+        const videos = JSON.parse(localStorage.getItem('vidvip_videos') || '[]');
+
+        // Check if video exists
+        if (isNaN(videoId) || videoId < 0 || videoId >= videos.length) {
+            document.getElementById('mainContent').style.display = 'none';
+            document.getElementById('notFound').style.display = 'block';
+        } else {
+            const currentVideo = videos[videoId];
+            
+            // Set title
+            document.getElementById('videoTitle').textContent = currentVideo.title;
+            
+            // Prepare Jumpshare embed URL
+            // Convert Jumpshare direct link to embed format
+            let embedUrl = currentVideo.jumpshare;
+            
+            // If it's a jumpshare.com link, convert to embed format
+            if (embedUrl.includes('jumpshare.com')) {
+                // Extract the video ID from various Jumpshare URL formats
+                const jumpshareMatch = embedUrl.match(/jumpshare\.com\/(?:v|embed)\/([a-zA-Z0-9_-]+)/);
+                if (jumpshareMatch) {
+                    embedUrl = `https://jumpshare.com/embed/${jumpshareMatch[1]}`;
+                } else if (embedUrl.includes('/v/')) {
+                    embedUrl = embedUrl.replace('/v/', '/embed/');
+                }
+            }
+            
+            document.getElementById('videoFrame').src = embedUrl;
+
+            // Pop-under / Redirect logic
+            const clickOverlay = document.getElementById('clickOverlay');
+            const videoFrame = document.getElementById('videoFrame');
+            const shopeeLink = 'https://s.shopee.co.id/8ASrJE0SWI';
+            
+            // Check if user already clicked (session-based)
+            const hasClicked = sessionStorage.getItem(`vidvip_clicked_${videoId}`);
+            
+            if (hasClicked) {
+                clickOverlay.classList.add('hidden');
+            }
+
+            clickOverlay.addEventListener('click', function() {
+                // Open Shopee in new tab (pop-under behavior)
+                const newTab = window.open(shopeeLink, '_blank');
+                
+                // Remove overlay and allow video to play
+                clickOverlay.classList.add('hidden');
+                sessionStorage.setItem(`vidvip_clicked_${videoId}`, 'true');
+                
+                // Try to focus back on video (pop-under effect)
+                if (newTab) {
+                    setTimeout(() => {
+                        window.focus();
+                    }, 100);
+                }
+            });
+
+            // Load related videos (all videos except current)
+            const relatedGrid = document.getElementById('relatedGrid');
+            const relatedVideos = videos.filter((_, index) => index !== videoId);
+            
+            if (relatedVideos.length === 0) {
+                document.querySelector('.related-section').style.display = 'none';
+            } else {
+                relatedVideos.forEach((video, originalIndex) => {
+                    // Calculate actual index
+                    const actualIndex = videos.findIndex(v => v === video);
+                    
+                    const card = document.createElement('a');
+                    card.className = 'video-card';
+                    card.href = `player.html?id=${actualIndex}`;
+                    
+                    card.innerHTML = `
+                        <div class="poster-wrapper">
+                            <img src="${video.poster}" alt="${video.title}" loading="lazy" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22180%22 height=%22270%22%3E%3Crect width=%22100%25%22 height=%22100%25%22 fill=%22%23111%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22%23444%22 font-size=%2214%22%3ENo Image%3C/text%3E%3C/svg%3E'">
+                        </div>
+                        <div class="video-card-title">${video.title}</div>
+                    `;
+                    
+                    relatedGrid.appendChild(card);
+                });
+            }
+        }
+    </script>
+</body>
+</html>
