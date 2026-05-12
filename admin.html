@@ -1,0 +1,566 @@
+<!-- admin.html - Panel Admin -->
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VIDVIP - Admin Panel</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #000000;
+            color: #ffffff;
+            min-height: 100vh;
+        }
+
+        /* Login Screen */
+        .login-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            transition: opacity 0.5s, visibility 0.5s;
+        }
+
+        .login-screen.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .login-box {
+            width: 100%;
+            max-width: 360px;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .login-logo {
+            font-size: 32px;
+            font-weight: 900;
+            letter-spacing: 4px;
+            margin-bottom: 40px;
+        }
+
+        .login-logo span {
+            border: 2px solid #fff;
+            padding: 2px 8px;
+            margin-left: 4px;
+            font-size: 16px;
+            vertical-align: middle;
+        }
+
+        .login-input {
+            width: 100%;
+            padding: 14px 16px;
+            background: #111;
+            border: 1px solid #333;
+            color: #fff;
+            font-size: 14px;
+            margin-bottom: 20px;
+            outline: none;
+            transition: border-color 0.3s;
+            border-radius: 2px;
+        }
+
+        .login-input:focus {
+            border-color: #fff;
+        }
+
+        .login-input::placeholder {
+            color: #555;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 14px;
+            background: #fff;
+            color: #000;
+            border: none;
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-radius: 2px;
+        }
+
+        .login-btn:hover {
+            background: #ccc;
+        }
+
+        .login-error {
+            color: #ff4444;
+            font-size: 12px;
+            margin-top: 15px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            letter-spacing: 1px;
+        }
+
+        .login-error.show {
+            opacity: 1;
+        }
+
+        /* Main Admin Content */
+        .admin-content {
+            display: none;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px;
+        }
+
+        .admin-content.active {
+            display: block;
+        }
+
+        /* Header */
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 50px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #222;
+        }
+
+        .admin-title {
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            color: #888;
+            font-weight: 500;
+        }
+
+        .logout-btn {
+            background: transparent;
+            color: #666;
+            border: 1px solid #333;
+            padding: 8px 20px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .logout-btn:hover {
+            color: #fff;
+            border-color: #fff;
+        }
+
+        /* Form Section */
+        .form-section {
+            margin-bottom: 50px;
+        }
+
+        .section-label {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 25px;
+            letter-spacing: 1px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #888;
+            margin-bottom: 8px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 14px;
+            background: #111;
+            border: 1px solid #333;
+            color: #fff;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.3s;
+            border-radius: 2px;
+            font-family: inherit;
+        }
+
+        .form-input:focus {
+            border-color: #fff;
+        }
+
+        .form-input::placeholder {
+            color: #444;
+        }
+
+        .submit-btn {
+            padding: 14px 40px;
+            background: #fff;
+            color: #000;
+            border: none;
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-radius: 2px;
+            margin-top: 10px;
+        }
+
+        .submit-btn:hover {
+            background: #ccc;
+        }
+
+        .submit-btn:active {
+            transform: scale(0.98);
+        }
+
+        /* Video List */
+        .list-section {
+            border-top: 1px solid #222;
+            padding-top: 40px;
+        }
+
+        .video-list {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .video-list th {
+            text-align: left;
+            padding: 12px 15px;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #666;
+            border-bottom: 1px solid #333;
+            font-weight: 500;
+        }
+
+        .video-list td {
+            padding: 15px;
+            border-bottom: 1px solid #1a1a1a;
+            font-size: 14px;
+            vertical-align: middle;
+        }
+
+        .video-list tr:hover td {
+            background: #0a0a0a;
+        }
+
+        .video-thumb {
+            width: 50px;
+            height: 75px;
+            object-fit: cover;
+            border-radius: 2px;
+            border: 1px solid #333;
+        }
+
+        .video-title-cell {
+            max-width: 300px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .delete-btn {
+            background: transparent;
+            color: #ff4444;
+            border: 1px solid #ff4444;
+            padding: 6px 16px;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-radius: 2px;
+        }
+
+        .delete-btn:hover {
+            background: #ff4444;
+            color: #000;
+        }
+
+        .empty-msg {
+            text-align: center;
+            padding: 60px 20px;
+            color: #444;
+            font-size: 14px;
+            letter-spacing: 1px;
+        }
+
+        /* Success Message */
+        .success-msg {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            background: #fff;
+            color: #000;
+            padding: 15px 25px;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            transform: translateX(150%);
+            transition: transform 0.4s ease;
+            z-index: 500;
+            border-radius: 2px;
+        }
+
+        .success-msg.show {
+            transform: translateX(0);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .admin-content {
+                padding: 20px;
+            }
+            
+            .admin-header {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+            
+            .video-list th,
+            .video-list td {
+                padding: 10px 8px;
+                font-size: 12px;
+            }
+            
+            .video-title-cell {
+                max-width: 150px;
+            }
+            
+            .video-thumb {
+                width: 40px;
+                height: 60px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div class="login-screen" id="loginScreen">
+        <div class="login-box">
+            <div class="login-logo">VIDVIP <span>ADMIN</span></div>
+            <input type="password" class="login-input" id="passwordInput" placeholder="Masukkan Password" autocomplete="off">
+            <button class="login-btn" id="loginBtn">Masuk</button>
+            <div class="login-error" id="loginError">Password salah!</div>
+        </div>
+    </div>
+
+    <!-- Admin Content -->
+    <div class="admin-content" id="adminContent">
+        <div class="admin-header">
+            <h1 class="admin-title">Panel Administrasi</h1>
+            <button class="logout-btn" id="logoutBtn">Logout</button>
+        </div>
+
+        <div class="form-section">
+            <h2 class="section-label">Upload Video Baru</h2>
+            <form id="uploadForm">
+                <div class="form-group">
+                    <label class="form-label">Judul Video</label>
+                    <input type="text" class="form-input" id="videoTitle" placeholder="Contoh: Film Action Terbaru 2024" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Link URL Poster / Thumbnail</label>
+                    <input type="url" class="form-input" id="videoPoster" placeholder="https://example.com/poster.jpg" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Link Jumpshare</label>
+                    <input type="url" class="form-input" id="videoJumpshare" placeholder="https://jumpshare.com/v/XXXXXXX" required>
+                </div>
+                
+                <button type="submit" class="submit-btn">Upload & Simpan</button>
+            </form>
+        </div>
+
+        <div class="list-section">
+            <h2 class="section-label">Daftar Video</h2>
+            <div id="videoListContainer">
+                <table class="video-list" id="videoTable">
+                    <thead>
+                        <tr>
+                            <th style="width: 70px;">Poster</th>
+                            <th>Judul</th>
+                            <th style="width: 100px;">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="videoTableBody"></tbody>
+                </table>
+                <div class="empty-msg" id="emptyList" style="display: none;">
+                    Belum ada video yang diupload.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Notification -->
+    <div class="success-msg" id="successMsg">Video berhasil disimpan!</div>
+
+    <script>
+        const CORRECT_PASSWORD = 'ulin123';
+        const loginScreen = document.getElementById('loginScreen');
+        const adminContent = document.getElementById('adminContent');
+        const passwordInput = document.getElementById('passwordInput');
+        const loginBtn = document.getElementById('loginBtn');
+        const loginError = document.getElementById('loginError');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const uploadForm = document.getElementById('uploadForm');
+        const videoTableBody = document.getElementById('videoTableBody');
+        const emptyList = document.getElementById('emptyList');
+        const videoTable = document.getElementById('videoTable');
+        const successMsg = document.getElementById('successMsg');
+
+        // Check if already logged in
+        if (sessionStorage.getItem('vidvip_admin') === 'logged_in') {
+            showAdmin();
+        }
+
+        // Login handler
+        function handleLogin() {
+            const password = passwordInput.value.trim();
+            
+            if (password === CORRECT_PASSWORD) {
+                sessionStorage.setItem('vidvip_admin', 'logged_in');
+                showAdmin();
+                passwordInput.value = '';
+                loginError.classList.remove('show');
+            } else {
+                loginError.classList.add('show');
+                passwordInput.value = '';
+                passwordInput.focus();
+            }
+        }
+
+        loginBtn.addEventListener('click', handleLogin);
+        passwordInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleLogin();
+        });
+
+        // Show admin panel
+        function showAdmin() {
+            loginScreen.classList.add('hidden');
+            adminContent.classList.add('active');
+            loadVideoList();
+        }
+
+        // Logout
+        logoutBtn.addEventListener('click', () => {
+            sessionStorage.removeItem('vidvip_admin');
+            loginScreen.classList.remove('hidden');
+            adminContent.classList.remove('active');
+            passwordInput.value = '';
+        });
+
+        // Upload form handler
+        uploadForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const title = document.getElementById('videoTitle').value.trim();
+            const poster = document.getElementById('videoPoster').value.trim();
+            let jumpshare = document.getElementById('videoJumpshare').value.trim();
+            
+            // Auto-convert Jumpshare link to embed format if needed
+            if (jumpshare.includes('jumpshare.com/v/')) {
+                jumpshare = jumpshare.replace('/v/', '/embed/');
+            }
+            
+            const videos = JSON.parse(localStorage.getItem('vidvip_videos') || '[]');
+            
+            videos.push({
+                title: title,
+                poster: poster,
+                jumpshare: jumpshare,
+                uploadedAt: new Date().toISOString()
+            });
+            
+            localStorage.setItem('vidvip_videos', JSON.stringify(videos));
+            
+            // Reset form
+            uploadForm.reset();
+            
+            // Show success message
+            showSuccess('Video berhasil disimpan!');
+            
+            // Refresh list
+            loadVideoList();
+        });
+
+        // Load video list
+        function loadVideoList() {
+            const videos = JSON.parse(localStorage.getItem('vidvip_videos') || '[]');
+            
+            if (videos.length === 0) {
+                videoTable.style.display = 'none';
+                emptyList.style.display = 'block';
+                return;
+            }
+            
+            videoTable.style.display = 'table';
+            emptyList.style.display = 'none';
+            videoTableBody.innerHTML = '';
+            
+            videos.forEach((video, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>
+                        <img src="${video.poster}" class="video-thumb" alt="" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2250%22 height=%2275%22%3E%3Crect width=%22100%25%22 height=%22100%25%22 fill=%22%23111%22/%3E%3C/svg%3E'">
+                    </td>
+                    <td class="video-title-cell" title="${video.title}">${video.title}</td>
+                    <td>
+                        <button class="delete-btn" onclick="deleteVideo(${index})">Hapus</button>
+                    </td>
+                `;
+                videoTableBody.appendChild(row);
+            });
+        }
+
+        // Delete video
+        window.deleteVideo = function(index) {
+            if (!confirm('Yakin ingin menghapus video ini?')) return;
+            
+            const videos = JSON.parse(localStorage.getItem('vidvip_videos') || '[]');
+            videos.splice(index, 1);
+            localStorage.setItem('vidvip_videos', JSON.stringify(videos));
+            
+            showSuccess('Video berhasil dihapus!');
+            loadVideoList();
+        };
+
+        // Show success notification
+        function showSuccess(message) {
+            successMsg.textContent = message;
+            successMsg.classList.add('show');
+            setTimeout(() => {
+                successMsg.classList.remove('show');
+            }, 3000);
+        }
+
+        // Initial load if already logged in
+        if (sessionStorage.getItem('vidvip_admin') === 'logged_in') {
+            loadVideoList();
+        }
+    </script>
+</body>
+</html>
