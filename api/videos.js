@@ -1,259 +1,103 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VIDVIP - Streaming Video</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+// api/videos.js - VERSI FIX
+const fs = require('fs');
+const path = require('path');
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background-color: #000000;
-            color: #ffffff;
-            min-height: 100vh;
-        }
+const DATA_FILE = path.join('/tmp', 'videos.json');
 
-        header {
-            padding: 24px 40px;
-            border-bottom: 1px solid #222;
-            position: sticky;
-            top: 0;
-            background: rgba(0, 0, 0, 0.95);
-            backdrop-filter: blur(10px);
-            z-index: 100;
-        }
+function readData() {
+  try {
+    if (!fs.existsSync(DATA_FILE)) {
+      fs.writeFileSync(DATA_FILE, JSON.stringify([]));
+      return [];
+    }
+    const data = fs.readFileSync(DATA_FILE, 'utf8');
+    return JSON.parse(data);
+  } catch (err) {
+    console.error('Read error:', err);
+    return [];
+  }
+}
 
-        .logo {
-            font-size: 26px;
-            font-weight: 900;
-            letter-spacing: 5px;
-            color: #fff;
-            text-decoration: none;
-            display: inline-block;
-        }
+function writeData(data) {
+  try {
+    fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
+  } catch (err) {
+    console.error('Write error:', err);
+  }
+}
 
-        .logo span {
-            color: #fff;
-            border: 2px solid #fff;
-            padding: 2px 8px;
-            margin-left: 6px;
-            font-size: 12px;
-            vertical-align: middle;
-            font-weight: 700;
-            letter-spacing: 1px;
-        }
+module.exports = (req, res) => {
+  // CORS - PENTING!
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-        main {
-            padding: 40px;
-            max-width: 1400px;
-            margin: 0 auto;
-        }
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
 
-        .section-title {
-            font-size: 13px;
-            text-transform: uppercase;
-            letter-spacing: 3px;
-            color: #666;
-            margin-bottom: 28px;
-            font-weight: 500;
-        }
+  // GET
+  if (req.method === 'GET') {
+    const videos = readData();
+    res.status(200).json({ success: true, data: videos });
+    return;
+  }
 
-        .video-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-            gap: 24px;
-        }
+  // POST
+  if (req.method === 'POST') {
+    let body = req.body;
+    
+    // Handle jika body belum di-parse
+    if (typeof body === 'string') {
+      try { body = JSON.parse(body); } catch(e) {}
+    }
+    
+    if (!body || !body.title || !body.poster || !body.jumpshare) {
+      res.status(400).json({ success: false, error: 'Data tidak lengkap' });
+      return;
+    }
 
-        .video-card {
-            cursor: pointer;
-            transition: transform 0.3s ease;
-            text-decoration: none;
-            color: #fff;
-            display: block;
-        }
+    const videos = readData();
+    videos.push({
+      id: Date.now(),
+      title: String(body.title).trim(),
+      poster: String(body.poster).trim(),
+      jumpshare: String(body.jumpshare).trim(),
+      uploadedAt: new Date().toISOString()
+    });
 
-        .video-card:hover {
-            transform: translateY(-4px);
-        }
+    writeData(videos);
+    res.status(200).json({ success: true, data: videos[videos.length - 1] });
+    return;
+  }
 
-        .poster-wrapper {
-            position: relative;
-            width: 100%;
-            aspect-ratio: 16 / 9;
-            background: #111;
-            border-radius: 6px;
-            overflow: hidden;
-            border: 1px solid #222;
-        }
+  // DELETE
+  if (req.method === 'DELETE') {
+    let body = req.body;
+    
+    if (typeof body === 'string') {
+      try { body = JSON.parse(body); } catch(e) {}
+    }
+    
+    const index = parseInt(body?.index);
+    
+    if (isNaN(index)) {
+      res.status(400).json({ success: false, error: 'Index tidak valid' });
+      return;
+    }
 
-        .poster-wrapper img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
-            transition: opacity 0.3s;
-        }
+    const videos = readData();
+    if (index < 0 || index >= videos.length) {
+      res.status(404).json({ success: false, error: 'Video tidak ditemukan' });
+      return;
+    }
 
-        .video-card:hover .poster-wrapper img {
-            opacity: 0.8;
-        }
+    videos.splice(index, 1);
+    writeData(videos);
+    res.status(200).json({ success: true });
+    return;
+  }
 
-        .poster-wrapper::after {
-            content: '▶';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 36px;
-            opacity: 0;
-            transition: opacity 0.3s;
-            color: #fff;
-            text-shadow: 0 2px 12px rgba(0,0,0,0.9);
-            pointer-events: none;
-        }
-
-        .video-card:hover .poster-wrapper::after {
-            opacity: 1;
-        }
-
-        .video-title {
-            margin-top: 14px;
-            font-size: 14px;
-            font-weight: 500;
-            line-height: 1.4;
-            color: #aaa;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            padding: 0 2px;
-        }
-
-        .video-card:hover .video-title {
-            color: #fff;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 120px 20px;
-            color: #444;
-        }
-
-        .empty-state p {
-            font-size: 14px;
-            letter-spacing: 1px;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 100px 20px;
-            color: #444;
-            font-size: 14px;
-            letter-spacing: 2px;
-        }
-
-        @media (max-width: 768px) {
-            header {
-                padding: 18px 24px;
-            }
-            
-            main {
-                padding: 24px;
-            }
-            
-            .video-grid {
-                grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-                gap: 16px;
-            }
-            
-            .logo {
-                font-size: 22px;
-                letter-spacing: 3px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .video-grid {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 12px;
-            }
-            
-            .video-title {
-                font-size: 13px;
-                margin-top: 10px;
-            }
-        }
-    </style>
-</head>
-<body>
-    <header>
-        <a href="index.html" class="logo">VIDVIP <span>VIP</span></a>
-    </header>
-
-    <main>
-        <h2 class="section-title">Semua Video</h2>
-        <div class="loading" id="loading">Memuat video...</div>
-        <div class="video-grid" id="videoGrid" style="display: none;"></div>
-        <div class="empty-state" id="emptyState" style="display: none;">
-            <p>Belum ada video. Tambahkan dari panel admin.</p>
-        </div>
-    </main>
-
-    <script>
-        // Auto-detect API URL (lokal vs Vercel)
-        const API_URL = window.location.hostname === 'localhost' 
-            ? 'http://localhost:3000/api/videos.js' 
-            : '/api/videos.js';
-
-        async function loadVideos() {
-            const grid = document.getElementById('videoGrid');
-            const emptyState = document.getElementById('emptyState');
-            const loading = document.getElementById('loading');
-
-            try {
-                const response = await fetch(API_URL);
-                const result = await response.json();
-                
-                loading.style.display = 'none';
-                
-                if (!result.success || result.data.length === 0) {
-                    grid.style.display = 'none';
-                    emptyState.style.display = 'block';
-                    return;
-                }
-
-                grid.style.display = 'grid';
-                emptyState.style.display = 'none';
-                grid.innerHTML = '';
-
-                result.data.forEach((video, index) => {
-                    const card = document.createElement('a');
-                    card.className = 'video-card';
-                    card.href = `player.html?id=${index}`;
-                    
-                    card.innerHTML = `
-                        <div class="poster-wrapper">
-                            <img src="${video.poster}" alt="${video.title}" loading="lazy" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22320%22 height=%22180%22%3E%3Crect width=%22100%25%22 height=%22100%25%22 fill=%22%23111%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22%23444%22 font-size=%2214%22%3ENo Image%3C/text%3E%3C/svg%3E'">
-                        </div>
-                        <div class="video-title">${video.title}</div>
-                    `;
-                    
-                    grid.appendChild(card);
-                });
-            } catch (error) {
-                loading.style.display = 'none';
-                emptyState.style.display = 'block';
-                emptyState.innerHTML = '<p>Gagal memuat video. Coba lagi nanti.</p>';
-                console.error('Error:', error);
-            }
-        }
-
-        loadVideos();
-        setInterval(loadVideos, 30000);
-    </script>
-</body>
-</html>
+  res.status(405).json({ success: false, error: 'Method tidak diizinkan' });
+};
