@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VIDVIP - Streaming Video</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #000000;
+            color: #ffffff;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        header {
+            padding: 20px 40px;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            background: #000;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: 900;
+            letter-spacing: 4px;
+            color: #fff;
+            text-decoration: none;
+        }
+
+        .logo span {
+            color: #fff;
+            border: 2px solid #fff;
+            padding: 2px 8px;
+            margin-left: 4px;
+            font-size: 14px;
+            vertical-align: middle;
+            font-weight: 700;
+        }
+
+        /* Main Content */
+        main {
+            padding: 40px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            color: #888;
+            margin-bottom: 30px;
+            font-weight: 500;
+        }
+
+        /* Video Grid */
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 25px;
+        }
+
+        .video-card {
+            cursor: pointer;
+            transition: transform 0.3s ease, opacity 0.3s;
+            text-decoration: none;
+            color: #fff;
+            display: block;
+        }
+
+        .video-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .video-card:hover .poster-wrapper::after {
+            opacity: 1;
+        }
+
+        .poster-wrapper {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 2/3;
+            background: #111;
+            border-radius: 4px;
+            overflow: hidden;
+            border: 1px solid #222;
+        }
+
+        .poster-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .poster-wrapper::after {
+            content: '▶';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 40px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            color: #fff;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+        }
+
+        .video-title {
+            margin-top: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            line-height: 1.4;
+            color: #ccc;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .video-card:hover .video-title {
+            color: #fff;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 100px 20px;
+            color: #555;
+        }
+
+        .empty-state p {
+            font-size: 14px;
+            letter-spacing: 1px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            header {
+                padding: 15px 20px;
+            }
+            
+            main {
+                padding: 20px;
+            }
+            
+            .video-grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                gap: 15px;
+            }
+            
+            .logo {
+                font-size: 22px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .video-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="index.html" class="logo">VIDVIP <span>VIP</span></a>
+    </header>
+
+    <main>
+        <h2 class="section-title">Semua Video</h2>
+        <div class="video-grid" id="videoGrid">
+            <!-- Videos will be loaded here -->
+        </div>
+        <div class="empty-state" id="emptyState" style="display: none;">
+            <p>Belum ada video. Tambahkan dari panel admin.</p>
+        </div>
+    </main>
+
+    <script>
+        // Load videos from localStorage
+        function loadVideos() {
+            const videos = JSON.parse(localStorage.getItem('vidvip_videos') || '[]');
+            const grid = document.getElementById('videoGrid');
+            const emptyState = document.getElementById('emptyState');
+
+            if (videos.length === 0) {
+                grid.style.display = 'none';
+                emptyState.style.display = 'block';
+                return;
+            }
+
+            grid.style.display = 'grid';
+            emptyState.style.display = 'none';
+            grid.innerHTML = '';
+
+            videos.forEach((video, index) => {
+                const card = document.createElement('a');
+                card.className = 'video-card';
+                card.href = `player.html?id=${index}`;
+                
+                card.innerHTML = `
+                    <div class="poster-wrapper">
+                        <img src="${video.poster}" alt="${video.title}" loading="lazy" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22220%22 height=%22330%22%3E%3Crect width=%22100%25%22 height=%22100%25%22 fill=%22%23111%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22%23444%22 font-size=%2214%22%3ENo Image%3C/text%3E%3C/svg%3E'">
+                    </div>
+                    <div class="video-title">${video.title}</div>
+                `;
+                
+                grid.appendChild(card);
+            });
+        }
+
+        // Initialize
+        loadVideos();
+        
+        // Listen for storage changes (when admin adds new video)
+        window.addEventListener('storage', loadVideos);
+    </script>
+</body>
+</html>
