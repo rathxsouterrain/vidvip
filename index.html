@@ -1,3 +1,4 @@
+<!-- index.html - FIX API URL -->
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -5,19 +6,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VIDVIP - Streaming Video</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background-color: #000000;
             color: #ffffff;
             min-height: 100vh;
         }
-
         header {
             padding: 24px 40px;
             border-bottom: 1px solid #222;
@@ -27,7 +22,6 @@
             backdrop-filter: blur(10px);
             z-index: 100;
         }
-
         .logo {
             font-size: 26px;
             font-weight: 900;
@@ -36,7 +30,6 @@
             text-decoration: none;
             display: inline-block;
         }
-
         .logo span {
             color: #fff;
             border: 2px solid #fff;
@@ -47,13 +40,11 @@
             font-weight: 700;
             letter-spacing: 1px;
         }
-
         main {
             padding: 40px;
             max-width: 1400px;
             margin: 0 auto;
         }
-
         .section-title {
             font-size: 13px;
             text-transform: uppercase;
@@ -62,13 +53,11 @@
             margin-bottom: 28px;
             font-weight: 500;
         }
-
         .video-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
             gap: 24px;
         }
-
         .video-card {
             cursor: pointer;
             transition: transform 0.3s ease;
@@ -76,11 +65,7 @@
             color: #fff;
             display: block;
         }
-
-        .video-card:hover {
-            transform: translateY(-4px);
-        }
-
+        .video-card:hover { transform: translateY(-4px); }
         .poster-wrapper {
             position: relative;
             width: 100%;
@@ -90,7 +75,6 @@
             overflow: hidden;
             border: 1px solid #222;
         }
-
         .poster-wrapper img {
             width: 100%;
             height: 100%;
@@ -98,11 +82,7 @@
             display: block;
             transition: opacity 0.3s;
         }
-
-        .video-card:hover .poster-wrapper img {
-            opacity: 0.8;
-        }
-
+        .video-card:hover .poster-wrapper img { opacity: 0.8; }
         .poster-wrapper::after {
             content: '▶';
             position: absolute;
@@ -116,11 +96,7 @@
             text-shadow: 0 2px 12px rgba(0,0,0,0.9);
             pointer-events: none;
         }
-
-        .video-card:hover .poster-wrapper::after {
-            opacity: 1;
-        }
-
+        .video-card:hover .poster-wrapper::after { opacity: 1; }
         .video-title {
             margin-top: 14px;
             font-size: 14px;
@@ -132,22 +108,16 @@
             text-overflow: ellipsis;
             padding: 0 2px;
         }
-
-        .video-card:hover .video-title {
-            color: #fff;
-        }
-
+        .video-card:hover .video-title { color: #fff; }
         .empty-state {
             text-align: center;
             padding: 120px 20px;
             color: #444;
         }
-
         .empty-state p {
             font-size: 14px;
             letter-spacing: 1px;
         }
-
         .loading {
             text-align: center;
             padding: 100px 20px;
@@ -155,37 +125,27 @@
             font-size: 14px;
             letter-spacing: 2px;
         }
-
+        .error-detail {
+            color: #ff4444;
+            font-size: 12px;
+            margin-top: 10px;
+            font-family: monospace;
+        }
         @media (max-width: 768px) {
-            header {
-                padding: 18px 24px;
-            }
-            
-            main {
-                padding: 24px;
-            }
-            
+            header { padding: 18px 24px; }
+            main { padding: 24px; }
             .video-grid {
                 grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
                 gap: 16px;
             }
-            
-            .logo {
-                font-size: 22px;
-                letter-spacing: 3px;
-            }
+            .logo { font-size: 22px; letter-spacing: 3px; }
         }
-
         @media (max-width: 480px) {
             .video-grid {
                 grid-template-columns: repeat(2, 1fr);
                 gap: 12px;
             }
-            
-            .video-title {
-                font-size: 13px;
-                margin-top: 10px;
-            }
+            .video-title { font-size: 13px; margin-top: 10px; }
         }
     </style>
 </head>
@@ -200,27 +160,40 @@
         <div class="video-grid" id="videoGrid" style="display: none;"></div>
         <div class="empty-state" id="emptyState" style="display: none;">
             <p>Belum ada video. Tambahkan dari panel admin.</p>
+            <div class="error-detail" id="errorDetail"></div>
         </div>
     </main>
 
     <script>
-        // Auto-detect API URL (lokal vs Vercel)
-        const API_URL = window.location.hostname === 'localhost' 
-            ? 'http://localhost:3000/api/videos.js' 
-            : '/api/videos.js';
+        // FIX: Gunakan path relatif yang benar untuk Vercel
+        const API_URL = '/api/videos';
 
         async function loadVideos() {
             const grid = document.getElementById('videoGrid');
             const emptyState = document.getElementById('emptyState');
             const loading = document.getElementById('loading');
+            const errorDetail = document.getElementById('errorDetail');
 
             try {
-                const response = await fetch(API_URL);
+                console.log('Fetching from:', API_URL);
+                
+                const response = await fetch(API_URL, {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                console.log('Response status:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
                 const result = await response.json();
+                console.log('Response data:', result);
                 
                 loading.style.display = 'none';
                 
-                if (!result.success || result.data.length === 0) {
+                if (!result.success || !result.data || result.data.length === 0) {
                     grid.style.display = 'none';
                     emptyState.style.display = 'block';
                     return;
@@ -245,10 +218,10 @@
                     grid.appendChild(card);
                 });
             } catch (error) {
+                console.error('Error detail:', error);
                 loading.style.display = 'none';
                 emptyState.style.display = 'block';
-                emptyState.innerHTML = '<p>Gagal memuat video. Coba lagi nanti.</p>';
-                console.error('Error:', error);
+                errorDetail.textContent = `Error: ${error.message}`;
             }
         }
 
